@@ -20,8 +20,17 @@ class HashTable:
     Implement this.
     """
 
-    def __init__(self, capacity):
+    def __init__(self, capacity = MIN_CAPACITY):
+        cpcty = capacity
+
+        # check if the provided capacity meets the minimum capacity requirement
+        if capacity < MIN_CAPACITY:
+            cpcty = MIN_CAPACITY
+
         # Your code here
+        self.capacity = cpcty
+        # self.head = None
+        self.hash_table = [None] * cpcty # create a hash_table list of length cpcty
 
 
     def get_num_slots(self):
@@ -35,6 +44,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        return self.capacity
 
 
     def get_load_factor(self):
@@ -46,23 +56,32 @@ class HashTable:
         # Your code here
 
 
-    def fnv1(self, key):
-        """
-        FNV-1 Hash, 64-bit
+    # def fnv1(self, key):
+    #     """
+    #     FNV-1 Hash, 64-bit
 
-        Implement this, and/or DJB2.
-        """
+    #     Implement this, and/or DJB2.
+    #     """
 
-        # Your code here
+    #     # Your code here
 
 
     def djb2(self, key):
         """
         DJB2 hash, 32-bit
+        
 
         Implement this, and/or FNV-1.
         """
         # Your code here
+        # https://stackoverflow.com/questions/1579721/why-are-5381-and-33-so-important-in-the-djb2-algorithm                                                                                                                               
+        hash = 5381 
+        
+        for x in key: 
+            # << is a bitwise operator; in this case, it shifts the "bits" of `hash` left by 5 "bits"
+            hash = (( hash << 5) + hash) + ord(x) # hash + 33 + ord(x)
+        
+        return hash
 
 
     def hash_index(self, key):
@@ -82,6 +101,15 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        idx = self.hash_index(key)
+        entry = HashTableEntry(key, value)
+
+        # if the new entry isn't at the end of the hash_table, update it's `next` property
+        if idx + 1 < self.capacity:
+            entry.next = self.hash_table[idx + 1]
+
+        self.hash_table[idx] = entry
+        # print('hash_table: ', self.hash_table)
 
 
     def delete(self, key):
@@ -93,6 +121,13 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        idx = self.hash_index(key)
+
+        if idx >= 0 and idx < self.capacity:
+            self.hash_table[idx].value = None
+        else:
+            print(f'Key {key} was not found')
+        
 
 
     def get(self, key):
@@ -104,6 +139,14 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        idx = self.hash_index(key)
+
+        if idx >= 0 and idx < self.capacity:
+            entry = self.hash_table[idx]
+        else:
+            return None
+
+        return entry.value
 
 
     def resize(self, new_capacity):
