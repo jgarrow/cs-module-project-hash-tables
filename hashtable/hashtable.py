@@ -136,6 +136,7 @@ class HashTable:
             if match is None and curr_node.next is None:
                 curr_node.next = entry
                 self.total_items+= 1
+                self.determine_resize_type()
 
             # if an entry with the provided key already exists, just update its value with the provided value
             elif match is not None:
@@ -146,6 +147,7 @@ class HashTable:
         else:
             self.hash_table[idx] = entry
             self.total_items+= 1
+            self.determine_resize_type()
 
 
     def delete(self, key):
@@ -246,7 +248,43 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        self.capacity = new_capacity
 
+        # make new array to store the current self.hash_table
+        # update self.hash_table to be array of size new_capacity
+        # for each item in our copy array
+        # self.put(item) in our newly size self.hash_table
+        # if item.next is not None
+        # make sure to self.put(item.next) to get all chained nodes
+
+        old_storage = self.hash_table
+        self.hash_table = [None] * new_capacity
+
+        for i, el in enumerate(old_storage):
+            if el is not None:
+                self.put(el.key, el.value)
+
+            curr_node = el
+
+            if curr_node is not None:
+                # add all chained nodes
+                while curr_node.next is not None:
+                    curr_node = curr_node.next
+                    if curr_node is not None:
+                        self.put(curr_node.key, curr_node.value)
+
+                    
+    # helper function to keep other methods more DRY
+    def determine_resize_type(self):
+        load_factor = self.get_load_factor()
+
+        # double size of self.hash_table
+        if load_factor > 0.7:
+            self.resize(self.capacity * 2)
+
+        # halve size of self.hash_table
+        elif load_factor < 0.2:
+            self.resize(self.capacity // 2)
 
 
 if __name__ == "__main__":
