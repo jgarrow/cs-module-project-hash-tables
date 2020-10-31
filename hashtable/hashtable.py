@@ -111,40 +111,41 @@ class HashTable:
         Implement this.
         """
         # Your code here
+
         idx = self.hash_index(key)
         entry = HashTableEntry(key, value)
+        match = None
 
         # if there's already something stored at this index
         if self.hash_table[idx] is not None:
-            # find the last entry node at this index and add our new entry to the tail
             curr_node = self.hash_table[idx]
-            # print('curr_node: ', curr_node)
 
-            # if there's already something at this index
-            while curr_node is not None:
-
-                while curr_node.key is not key:
-                    curr_node = curr_node.next
-
-                # if an entry with the provided key already exists, just update its value with the provided value
-                if curr_node.key is key:
-                    curr_node.value = value
-
-                # if we reached the end and didn't find an existing entry matching the provided key
-                # add a new entry at the end
+            # look for an existing entry with the same key
+            while match is None:
+                if curr_node.key == key:
+                    match = curr_node
                 else:
-                    curr_node = self.hash_table[idx]
-                    
-                    while curr_node.next is not None:
-                        curr_node = curr_node.next
+                    curr_node = curr_node.next
+                
+                # if we reached the tail and still haven't found an existing match, break out of the loop
+                if curr_node is None:
+                    break
 
-                    curr_node.next = entry
+            # if we reached the end and didn't find an existing entry matching the provided key
+            # add a new entry at the end
+            if match is None and curr_node.next is None:
+                curr_node.next = entry
+                self.total_items+= 1
+
+            # if an entry with the provided key already exists, just update its value with the provided value
+            elif match is not None:
+                match.value = value
+            
         
-        # if nothing exists as this index
+        # if nothing exists as this index, just add the entry
         else:
             self.hash_table[idx] = entry
-
-        self.total_items+= 1
+            self.total_items+= 1
 
 
     def delete(self, key):
@@ -156,8 +157,6 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        # print('\n---------------------------')
-        # print('key in delete: ', key)
         idx = self.hash_index(key)
 
         if idx >= 0 and idx < self.capacity:
@@ -173,17 +172,11 @@ class HashTable:
             else:
                 # loop until we find a match for the provided key
                 while match is None:
-                    # print('prev_node: ', prev_node)
-                    # print('curr_node: ', curr_node)
-                    # print('curr_node.key != key: ', curr_node.key != key)
                     # check to see if there is an entry at this index whose key matches the provided key
                     if curr_node.key != key:
-                        # print('made it')
                         prev_node = curr_node
                         curr_node = curr_node.next
                     
-                        # print('prev_node: ', prev_node)
-                        # print('curr_node: ', curr_node)
                     elif curr_node.key == key:
                         match = curr_node
                     
@@ -191,22 +184,6 @@ class HashTable:
                     if curr_node.next is None and match is None:
                         print(f'Key {key} was not found')
                         return 
-
-                    # if we never found an entry with a matching key, return None
-                    # if curr_node.key is not key or curr_node is None:
-                    #     print(f'Key {key} was not found')
-                    # else:
-                    #     print('prev_node at end: ', prev_node)
-                    #     # if we found a match, delete the entry
-                    #     if prev_node is not None:
-                    #         prev_node.next = curr_node.next
-
-                    #     curr_node = None
-                    #     self.total_items-= 1
-                
-                    # print('prev_node at end: ', prev_node)
-                    # print('curr_node at end: ', curr_node)
-                    # print('match: ', match)
                 
                 # if prev_node is still None and match.next is None, that means there is only 1 node at this index
                 if prev_node is None and match.next is None:
@@ -215,9 +192,6 @@ class HashTable:
                     prev_node.next = match.next
                 
                 self.total_items-= 1
-
-                # for i, el in enumerate(self.hash_table):
-                #     print(f'entry at i {i}: {el}')
             
         else:
             print(f'Key {key} was not found')
@@ -234,13 +208,6 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        # print('\nkey: ', key)
-        # print('\n**************************')
-        # print('key in get: ', key)
-        # print('self.hash_table: ', self.hash_table)
-
-        # for i, el in enumerate(self.hash_table):
-        #     print(f'entry at i {i}: {el}')
 
         idx = self.hash_index(key)
 
@@ -269,8 +236,6 @@ class HashTable:
         # otherwise return None if the index is not in range
         else:
             return None
-
-        # return entry.value
 
 
     def resize(self, new_capacity):
