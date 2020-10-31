@@ -6,6 +6,9 @@ class HashTableEntry:
         self.key = key
         self.value = value
         self.next = None
+    
+    def __str__(self):
+        return 'key: {self.key}, value: {self.value}'.format(self=self)
 
 
 # Hash table can't have fewer than this many slots
@@ -31,6 +34,7 @@ class HashTable:
         self.capacity = cpcty
         # self.head = None
         self.hash_table = [None] * cpcty # create a hash_table list of length cpcty
+        self.total_items = 0
 
 
     def get_num_slots(self):
@@ -54,6 +58,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        return self.total_items / self.capacity 
 
 
     # def fnv1(self, key):
@@ -75,11 +80,16 @@ class HashTable:
         """
         # Your code here
         # https://stackoverflow.com/questions/1579721/why-are-5381-and-33-so-important-in-the-djb2-algorithm                                                                                                                               
-        hash = 5381 
+        hash = 5381
+        bytes_to_hash = key.encode() 
+
+        for byte in bytes_to_hash:
+            # << is a bitwise operator; in this case, it shifts the "bits" of `hash` left by 5 
+            hash = ((hash << 5) + byte)
         
-        for x in key: 
-            # << is a bitwise operator; in this case, it shifts the "bits" of `hash` left by 5 "bits"
-            hash = (( hash << 5) + hash) + ord(x) # hash + 33 + ord(x)
+        # for x in key: 
+        #     # << is a bitwise operator; in this case, it shifts the "bits" of `hash` left by 5 "bits"
+        #     hash = (( hash << 5) + hash) + ord(x) # hash + 33 + ord(x)
         
         return hash
 
@@ -104,12 +114,37 @@ class HashTable:
         idx = self.hash_index(key)
         entry = HashTableEntry(key, value)
 
-        # if the new entry isn't at the end of the hash_table, update it's `next` property
-        if idx + 1 < self.capacity:
-            entry.next = self.hash_table[idx + 1]
+        # if there's already something stored at this index
+        if self.hash_table[idx] is not None:
+            # find the last entry node at this index and add our new entry to the tail
+            curr_node = self.hash_table[idx]
+            # print('curr_node: ', curr_node)
 
-        self.hash_table[idx] = entry
-        # print('hash_table: ', self.hash_table)
+            # if there's already something at this index
+            while curr_node is not None:
+
+                while curr_node.key is not key:
+                    curr_node = curr_node.next
+
+                # if an entry with the provided key already exists, just update its value with the provided value
+                if curr_node.key is key:
+                    curr_node.value = value
+
+                # if we reached the end and didn't find an existing entry matching the provided key
+                # add a new entry at the end
+                else:
+                    curr_node = self.hash_table[idx]
+                    
+                    while curr_node.next is not None:
+                        curr_node = curr_node.next
+
+                    curr_node.next = entry
+        
+        # if nothing exists as this index
+        else:
+            self.hash_table[idx] = entry
+
+        self.total_items+= 1
 
 
     def delete(self, key):
@@ -121,12 +156,72 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        # print('\n---------------------------')
+        # print('key in delete: ', key)
         idx = self.hash_index(key)
 
         if idx >= 0 and idx < self.capacity:
-            self.hash_table[idx].value = None
+            # find the entry node that matches the provided key
+            prev_node = None
+            curr_node = self.hash_table[idx]
+            match = None
+
+            # check if any node at index exists
+            if curr_node is None:
+                print(f'Key {key} was not found')
+                return
+            else:
+                # loop until we find a match for the provided key
+                while match is None:
+                    # print('prev_node: ', prev_node)
+                    # print('curr_node: ', curr_node)
+                    # print('curr_node.key != key: ', curr_node.key != key)
+                    # check to see if there is an entry at this index whose key matches the provided key
+                    if curr_node.key != key:
+                        # print('made it')
+                        prev_node = curr_node
+                        curr_node = curr_node.next
+                    
+                        # print('prev_node: ', prev_node)
+                        # print('curr_node: ', curr_node)
+                    elif curr_node.key == key:
+                        match = curr_node
+                    
+                    # if we've reached the tail and still haven't found a match
+                    if curr_node.next is None and match is None:
+                        print(f'Key {key} was not found')
+                        return 
+
+                    # if we never found an entry with a matching key, return None
+                    # if curr_node.key is not key or curr_node is None:
+                    #     print(f'Key {key} was not found')
+                    # else:
+                    #     print('prev_node at end: ', prev_node)
+                    #     # if we found a match, delete the entry
+                    #     if prev_node is not None:
+                    #         prev_node.next = curr_node.next
+
+                    #     curr_node = None
+                    #     self.total_items-= 1
+                
+                    # print('prev_node at end: ', prev_node)
+                    # print('curr_node at end: ', curr_node)
+                    # print('match: ', match)
+                
+                # if prev_node is still None and match.next is None, that means there is only 1 node at this index
+                if prev_node is None and match.next is None:
+                    self.hash_table[idx] = None
+                elif prev_node is not None:
+                    prev_node.next = match.next
+                
+                self.total_items-= 1
+
+                # for i, el in enumerate(self.hash_table):
+                #     print(f'entry at i {i}: {el}')
+            
         else:
             print(f'Key {key} was not found')
+            return
         
 
 
@@ -139,14 +234,43 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        # print('\nkey: ', key)
+        # print('\n**************************')
+        # print('key in get: ', key)
+        # print('self.hash_table: ', self.hash_table)
+
+        # for i, el in enumerate(self.hash_table):
+        #     print(f'entry at i {i}: {el}')
+
         idx = self.hash_index(key)
 
+        # check if the index is in range
         if idx >= 0 and idx < self.capacity:
-            entry = self.hash_table[idx]
+            curr_node = self.hash_table[idx]
+
+            # check if any node at index exists
+            if curr_node is None:
+                return None
+
+            # if there's already something at this index
+            while curr_node is not None:
+                
+                # check to see if there is an entry at this index whose key matches the provided key
+                while curr_node.key is not key:
+                    curr_node = curr_node.next
+                
+                # if we never found an entry with a matching key, return None
+                if curr_node.key is not key or curr_node is None:
+                    return None
+                else:
+                    return curr_node.value
+            
+        
+        # otherwise return None if the index is not in range
         else:
             return None
 
-        return entry.value
+        # return entry.value
 
 
     def resize(self, new_capacity):
